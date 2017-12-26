@@ -21,3 +21,7 @@ Licence MIT.
 Repository
 --------------
 [Plugin's sources](https://github.com/p-arnaud/yourls-ee-password)
+
+One more thing
+--------------
+Started from [yourls-password-protection](https://github.com/GhostCyborg/yourls-password-protection), i mainly added a clear password column in admin view and a direct link to edit him.
