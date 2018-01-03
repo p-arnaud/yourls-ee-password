@@ -303,7 +303,7 @@ function api_edit_url_update_password() {
   }
   if( isset( $_REQUEST[ 'url-password-active' ]) && ( $_REQUEST[ 'url-password-active' ] === 'true' ) && isset( $_REQUEST[ 'url-password' ] ) ){
     $shorturl = yourls_sanitize_string($_REQUEST['shorturl']);
-    $password = yourls_sanitize_string($_POST[ 'url-password' ]);
+    $password = yourls_sanitize_string($_REQUEST[ 'url-password' ]);
     $ee_password_array = json_decode( $ydb->option[ 'ee_password' ], true );
     $ee_password_array[$shorturl] = $password;
     yourls_update_option( 'ee_password', json_encode( $ee_password_array ) );
