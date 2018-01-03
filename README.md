@@ -7,6 +7,14 @@ Description
 -----------
 This plugin enables the feature of password for your short URLs.
 
+API
+---
+This plugin can extends the API EDIT plugin: [yourls-api-edit-url](https://github.com/timcrockford/yourls-api-edit-url)
+You can update password adding *url-password-active* parameter (true/false) and *url-password* parameter.
+
+Example:
+ /yourls-api.php?username=username&password=password&format=json&action=update&url=ozh&url-password-active=true&url-password=mypassword&shorturl=ozh
+
 Installation
 ------------
 1. In `/user/plugins`, create a new folder named `yourls-ee-password`.
