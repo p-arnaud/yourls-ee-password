@@ -14,25 +14,37 @@ if( !defined( 'YOURLS_ABSPATH' ) ) die();
 // Add column to admin's url listing
 yourls_add_filter('table_head_cells', 'ee_password_table_head_cells');
 function ee_password_table_head_cells($args) {
-  $args['password'] = 'Password';
-  return $args;
+    $ee_multi_users_plugin = yourls_is_active_plugin('yourls-ee-multi-users/plugin.php');
+    if ($ee_multi_users_plugin == 1 and ee_multi_users_is_admin(YOURLS_USER) === true) {
+        return $args;
+    }
+    else {
+        $args['password'] = 'Password';
+    }
+    return $args;
 }
 // Show password in admin's url listing
 yourls_add_filter('table_add_row_cell_array', 'ee_password_table_add_row_cell_array');
 function ee_password_table_add_row_cell_array($args) {
-  global $ydb;
-  $ee_password_array = json_decode( $ydb->option[ 'ee_password' ], true );
+    $ee_multi_users_plugin = yourls_is_active_plugin('yourls-ee-multi-users/plugin.php');
+    if ($ee_multi_users_plugin == 1 and ee_multi_users_is_admin(YOURLS_USER) === true) {
 
-  if ($ee_password_array[$args['keyword']['keyword_html']]) {
-      $password = $ee_password_array[$args['keyword']['keyword_html']];
-  } else {
-    $password = "";
+    }
+    else {
+      global $ydb;
+      $ee_password_array = json_decode( $ydb->option[ 'ee_password' ], true );
+
+      if ($ee_password_array[$args['keyword']['keyword_html']]) {
+          $password = $ee_password_array[$args['keyword']['keyword_html']];
+      } else {
+        $password = "";
+      }
+
+      $args['password'] = array(
+        'template' => '%password%',
+        'password' => '<a " href=plugins.php?page=ee_password&shortname=' . $args['keyword']['keyword_html'] . '><img src="../images/pencil.png"/></a> ' . $password,
+      );
   }
-
-  $args['password'] = array(
-    'template' => '%password%',
-    'password' => '<a " href=plugins.php?page=ee_password&shortname=' . $args['keyword']['keyword_html'] . '><img src="../images/pencil.png"/></a> ' . $password,
-  );
   return $args;
 }
 
@@ -155,26 +167,43 @@ function ee_password_display_page() {
 
 // Set/Delete date from DB
 function ee_password_process_new() {
-	global $ydb;
+  global $ydb;
+	$ee_password_array = json_decode( $ydb->option[ 'ee_password' ], true ); //Get's array of currently active Date Protected URLs
+  $ee_multi_users_plugin = yourls_is_active_plugin('yourls-ee-multi-users/plugin.php');
+  $user_keywords = array();
+  if ($ee_multi_users_plugin == 1) {
+    $user_keywords = ee_multi_users_get_current_user_keywords();
+  }
+
   // Sanitize
   foreach ($_POST[ 'password' ] as $key => $value) {
-    $_POST[ 'password' ][$key] = yourls_sanitize_string($value);
+    if (array_search($key, $user_keywords) !== false) {
+      $sanitized = yourls_sanitize_string($value);
+      if ($sanitized === false) {
+        unset($ee_password_array[$key]);
+      } else {
+        $ee_password_array[$key] = yourls_sanitize_string($value);
+      }
+    }
   }
-	if( isset( $_POST[ 'password-unchecked' ] ) ){
-		$ee_password_array = json_decode( $ydb->option[ 'ee_password' ], true ); //Get's array of currently active Date Protected URLs
-		foreach ( $_POST[ 'password-unchecked' ] as $ee_password_unchecked ){
-			unset($ee_password_array[ $ee_password_unchecked ]);
-		}
-	}
-  yourls_update_option( 'ee_password', json_encode( $_POST[ 'password' ] ) );
+  foreach ( $ee_password_array as $key => $value ){
+      if ($ee_multi_users_plugin == 0 || array_search($key, $user_keywords) !== false) {
+        if (array_search($key, array_keys($_POST['password'])) === false) {
+          unset($ee_password_array[ $key ]);
+        }
+      }
+  }
+  yourls_update_option( 'ee_password', json_encode( $ee_password_array ) );
 	echo "<p style='color: green'>Success!</p>";
+  return yourls_apply_filter( 'ee_password_process_new', $_POST );
 }
 
 //Display Form
 function ee_password_process_display() {
 	global $ydb;
+  $where = ee_multi_users_admin_list_where();
 	$table = YOURLS_DB_TABLE_URL;
-	$query = $ydb->get_results( "SELECT * FROM `$table` WHERE 1=1" );
+	$query = $ydb->get_results( "SELECT * FROM `$table` WHERE 1=1"  . $where );
 
 	$ee_su = yourls__( "Short URL"   , "ee_password" ); //Translate "Short URL"
 	$ee_ou = yourls__( "Original URL", "ee_password" ); //Translate "Original URL"
